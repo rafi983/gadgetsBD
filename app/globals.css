@@ -2,7 +2,7 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #333333;
 }
 
 @theme inline {
@@ -10,13 +10,17 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-amazon: #131921;
+  --color-amazon-light: #232f3e;
+  --color-amazon-background: #e3e6e6;
+  --color-amazon-text: #333333;
+  --color-amazon-blue: #007185;
+  --color-amazon-orange: #c7511f;
+  --color-amazon-yellow: #ffd814;
+  --color-amazon-yellow_hover: #f7ca00;
+  --color-amazon-secondary: #ffa41c;
+  --color-amazon-secondary_hover: #fa8900;
 }
 
 body {
@@ -24,3 +28,11 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+

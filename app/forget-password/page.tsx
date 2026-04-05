@@ -1,7 +1,43 @@
+"use client";
+
 import Link from "next/link";
 import { CheckCircle } from "lucide-react";
+import { useState } from "react";
 
 export default function ForgetPasswordPage() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus("loading");
+    setErrorMessage("");
+
+    try {
+      const res = await fetch("/api/auth/forget-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to send reset email");
+      }
+
+      setStatus("success");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setErrorMessage(err.message);
+      } else {
+        setErrorMessage("Something went wrong");
+      }
+      setStatus("error");
+    }
+  };
+
   return (
     <div className="bg-white text-amazon-text flex min-h-screen flex-col items-center pt-8">
       <div className="mb-4">
@@ -18,7 +54,7 @@ export default function ForgetPasswordPage() {
           Enter the email address or mobile phone number associated with your Gadgets BD account.
         </p>
 
-        <form className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="email" className="mb-1 block text-sm font-bold">
               Email or mobile phone number
@@ -27,28 +63,39 @@ export default function ForgetPasswordPage() {
               type="text"
               id="email"
               required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-sm border border-gray-400 px-2 py-1.5 outline-none focus:border-amazon-secondary focus:ring-1 focus:ring-amazon-secondary"
             />
           </div>
 
           <button
-            type="button"
-            className="w-full rounded-sm border border-[#a88734] px-3 py-1.5 text-sm shadow-sm"
+            type="submit"
+            disabled={status === "loading"}
+            className="w-full rounded-sm border border-[#a88734] px-3 py-1.5 text-sm shadow-sm disabled:opacity-50"
             style={{ background: "linear-gradient(to bottom, #f7dfa5, #f0c14b)" }}
           >
-            Continue
+            {status === "loading" ? "Sending..." : "Continue"}
           </button>
         </form>
 
-        <div className="mt-4 hidden rounded-sm border border-green-200 bg-green-50 p-3 text-xs text-green-800">
-          <div className="flex items-start gap-2">
-            <CheckCircle className="mt-0.5 h-4 w-4 text-green-600" />
-            <div>
-              <strong>Check your email</strong>
-              <p className="mt-1">We&apos;ve sent a password reset link to your email address.</p>
+        {status === "error" && (
+          <div className="mt-4 rounded-sm border border-red-200 bg-red-50 p-3 text-xs text-red-800">
+            {errorMessage}
+          </div>
+        )}
+
+        {status === "success" && (
+          <div className="mt-4 rounded-sm border border-green-200 bg-green-50 p-3 text-xs text-green-800">
+            <div className="flex items-start gap-2">
+              <CheckCircle className="mt-0.5 h-4 w-4 text-green-600" />
+              <div>
+                <strong>Check your email</strong>
+                <p className="mt-1">We&apos;ve sent a password reset link to your email address.</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="w-full max-w-[350px]">
@@ -73,4 +120,3 @@ export default function ForgetPasswordPage() {
     </div>
   );
 }
-

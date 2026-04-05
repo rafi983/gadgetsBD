@@ -1,3 +1,4 @@
+import { UserNav } from "@/components/auth/UserNav";
 import Link from "next/link";
 import { Check, ChevronDown, Download, Search, ShoppingCart } from "lucide-react";
 
@@ -21,7 +22,7 @@ export default function SuccessPage() {
 
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center hover:outline hover:outline-1 hover:outline-white rounded-sm p-1 cursor-pointer"><div className="font-bold text-sm">EN</div></div>
-            <Link href="/login" className="hover:outline hover:outline-1 hover:outline-white rounded-sm p-1 cursor-pointer"><div className="text-xs leading-none text-gray-300">Hello, Sign in</div><div className="font-bold text-sm">Account &amp; Lists</div></Link>
+            <UserNav />
             <Link href="/cart" className="flex items-end hover:outline hover:outline-1 hover:outline-white rounded-sm p-1 cursor-pointer relative"><ShoppingCart className="w-8 h-8" /><span className="font-bold text-amazon-secondary absolute top-0 left-1/2 -translate-x-1/2 text-sm">0</span><span className="font-bold text-sm hidden md:block">Cart</span></Link>
           </div>
         </div>

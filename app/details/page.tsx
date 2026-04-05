@@ -1,3 +1,4 @@
+import { UserNav } from "@/components/auth/UserNav";
 import Link from "next/link";
 import {
   CheckCircle,
@@ -59,10 +60,7 @@ export default function DetailsPage() {
               <div className="font-bold text-sm">EN</div>
             </div>
 
-            <Link href="/login" className="hover:outline hover:outline-1 hover:outline-white rounded-sm p-1 cursor-pointer">
-              <div className="text-xs leading-none text-gray-300">Hello, Sign in</div>
-              <div className="font-bold text-sm">Account &amp; Lists</div>
-            </Link>
+            <UserNav />
 
             <Link href="/cart" className="flex items-end hover:outline hover:outline-1 hover:outline-white rounded-sm p-1 cursor-pointer relative">
               <ShoppingCart className="w-8 h-8" />

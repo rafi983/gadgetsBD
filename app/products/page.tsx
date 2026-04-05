@@ -1,3 +1,4 @@
+import { UserNav } from "@/components/auth/UserNav";
 import Link from "next/link";
 import { ChevronDown, Search, ShoppingCart, Star } from "lucide-react";
 
@@ -74,10 +75,7 @@ export default function ProductsPage() {
 
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center rounded-sm p-1 cursor-pointer hover:outline hover:outline-1 hover:outline-white"><div className="font-bold text-sm">EN</div></div>
-            <Link href="/login" className="rounded-sm p-1 cursor-pointer hover:outline hover:outline-1 hover:outline-white">
-              <div className="text-xs leading-none text-gray-300">Hello, Sign in</div>
-              <div className="font-bold text-sm">Account &amp; Lists</div>
-            </Link>
+            <UserNav />
             <Link href="/cart" className="flex items-end rounded-sm p-1 cursor-pointer relative hover:outline hover:outline-1 hover:outline-white">
               <ShoppingCart className="w-8 h-8" />
               <span className="font-bold text-amazon-secondary absolute top-0 left-1/2 -translate-x-1/2 text-sm">3</span>

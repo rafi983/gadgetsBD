@@ -1,3 +1,4 @@
+import { UserNav } from "@/components/auth/UserNav";
 import Link from "next/link";
 import { CreditCard, Headphones, Search, ShieldCheck, ShoppingCart, Truck } from "lucide-react";
 
@@ -64,10 +65,7 @@ export default function Home() {
               <div className="text-sm font-bold">EN</div>
             </div>
 
-            <Link href="/login" className="cursor-pointer rounded-sm p-1 hover:outline hover:outline-1 hover:outline-white">
-              <div className="text-xs leading-none text-gray-300">Hello, Sign in</div>
-              <div className="text-sm font-bold">Account &amp; Lists</div>
-            </Link>
+            <UserNav />
 
             <Link href="/cart" className="relative flex cursor-pointer items-end rounded-sm p-1 hover:outline hover:outline-1 hover:outline-white">
               <ShoppingCart className="h-8 w-8" />

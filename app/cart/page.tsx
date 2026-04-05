@@ -1,3 +1,5 @@
+"use client";
+
 import { UserNav } from "@/components/auth/UserNav";
 import Link from "next/link";
 import {
@@ -8,29 +10,26 @@ import {
   ShoppingCart,
   Truck,
 } from "lucide-react";
-
-const cartItems = [
-  {
-    name: 'Apple MacBook Pro 16" M2 Max - 32GB RAM, 1TB SSD',
-    image: "https://images.unsplash.com/photo-1517336712461-481140081023?w=300",
-    seller: "Official Apple Store",
-    price: "৳3,45,000",
-  },
-  {
-    name: "Sony WH-1000XM5 Wireless Noise Canceling Headphones",
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300",
-    seller: "Sony Official",
-    price: "৳38,500",
-  },
-  {
-    name: "Razer BlackWidow V4 Pro Mechanical Gaming Keyboard",
-    image: "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=300",
-    seller: "Razer Store",
-    price: "৳18,500",
-  },
-];
+import { useCartStore } from "@/lib/store";
+import { useEffect, useState } from "react";
+import { CartBadge } from "@/components/ui/cart-badge";
+import { SearchForm } from "@/components/ui/search-form";
 
 export default function CartPage() {
+  const [mounted, setMounted] = useState(false);
+  const cartItems = useCartStore((state) => state.items);
+  const removeItem = useCartStore((state) => state.removeItem);
+  const updateQuantity = useCartStore((state) => state.updateQuantity);
+  
+  const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const totalPrice = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
   return (
     <div id="top" className="bg-amazon-background text-amazon-text flex flex-col min-h-screen">
       <nav className="bg-amazon text-white">
@@ -41,20 +40,7 @@ export default function CartPage() {
             </span>
           </Link>
 
-          <div className="flex-1 flex h-10 rounded-md overflow-hidden focus-within:ring-3 focus-within:ring-amazon-secondary">
-            <div className="bg-gray-100 flex items-center px-2 border-r border-gray-300 cursor-pointer hover:bg-gray-200">
-              <span className="text-xs text-black">Electronics</span>
-              <ChevronDown className="w-3 h-3 ml-1 text-gray-500" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search Gadgets, Laptops, Phones..."
-              className="flex-1 px-3 text-black outline-none"
-            />
-            <button className="bg-amazon-secondary hover:bg-[#fa8900] px-4 flex items-center justify-center">
-              <Search className="text-black w-5 h-5" />
-            </button>
-          </div>
+          <SearchForm />
 
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center hover:outline hover:outline-1 hover:outline-white rounded-sm p-1 cursor-pointer">
@@ -63,11 +49,7 @@ export default function CartPage() {
 
             <UserNav />
 
-            <Link href="/cart" className="flex items-end hover:outline hover:outline-1 hover:outline-white rounded-sm p-1 cursor-pointer relative">
-              <ShoppingCart className="w-8 h-8" />
-              <span className="font-bold text-amazon-secondary absolute top-0 left-1/2 -translate-x-1/2 text-sm">3</span>
-              <span className="font-bold text-sm hidden md:block">Cart</span>
-            </Link>
+            <CartBadge />
           </div>
         </div>
       </nav>
@@ -78,6 +60,7 @@ export default function CartPage() {
             <div className="bg-white p-4 mb-4 border-b border-gray-300">
               <h1 className="text-2xl font-normal mb-2">Shopping Cart</h1>
               <div className="text-sm text-gray-600">
+                {cartItems.length === 0 ? "Your cart is empty. " : ""}
                 <Link href="/products" className="text-amazon-blue hover:underline">
                   Continue shopping
                 </Link>
@@ -86,57 +69,60 @@ export default function CartPage() {
 
             <div className="bg-white">
               {cartItems.map((item) => (
-                <div key={item.name} className="p-4 border-b border-gray-300 flex gap-4 hover:bg-gray-50">
+                <div key={item.product._id} className="p-4 border-b border-gray-300 flex gap-4 hover:bg-gray-50">
                   <div className="w-32 h-32 flex-shrink-0">
                     <img
-                      src={item.image}
-                      className="w-full h-full object-cover rounded border border-gray-200"
-                      alt="Product"
+                      src={item.product.image}
+                      className="w-full h-full object-cover rounded border border-gray-200 mix-blend-multiply"
+                      alt={item.product.name}
                     />
                   </div>
                   <div className="flex-1">
                     <h3 className="font-medium text-base mb-1">
-                      <Link href="/details" className="text-amazon-blue hover:text-amazon-orange hover:underline">
-                        {item.name}
+                      <Link href={`/details/${item.product._id}`} className="text-amazon-blue hover:text-amazon-orange hover:underline">
+                        {item.product.name}
                       </Link>
                     </h3>
                     <p className="text-sm text-green-700 font-medium">In Stock</p>
-                    <p className="text-xs text-gray-600 mt-1">Sold by: {item.seller}</p>
+                    <p className="text-xs text-gray-600 mt-1">Sold by: {item.product.vendor}</p>
                     <p className="text-xs text-gray-600">Eligible for FREE Shipping</p>
 
                     <div className="flex items-center gap-4 mt-3">
                       <div className="flex items-center gap-2">
                         <label className="text-xs text-gray-600">Qty:</label>
-                        <select className="border border-gray-400 rounded-md px-2 py-1 text-sm bg-gray-50 outline-none focus:ring-1 focus:ring-amazon-blue">
-                          <option>1</option>
-                          <option>2</option>
-                          <option>3</option>
-                          <option>4</option>
-                          <option>5</option>
+                        <select 
+                          value={item.quantity}
+                          onChange={(e) => updateQuantity(item.product._id, parseInt(e.target.value))}
+                          className="border border-gray-400 rounded-md px-2 py-1 text-sm bg-gray-50 outline-none focus:ring-1 focus:ring-amazon-blue"
+                        >
+                          {[1,2,3,4,5,6,7,8,9,10].map(num => (
+                            <option key={num} value={num}>{num}</option>
+                          ))}
                         </select>
                       </div>
 
-                      <span className="text-gray-300">|</span>
-
-                      <button className="text-sm text-amazon-blue hover:text-amazon-orange hover:underline">
+                      <button 
+                        onClick={() => removeItem(item.product._id)}
+                        className="text-sm text-amazon-blue hover:text-amazon-orange hover:underline"
+                      >
                         Delete
                       </button>
-
-                      <span className="text-gray-300">|</span>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-amazon-orange">{item.price}</p>
+                    <p className="text-lg font-bold text-amazon-orange">৳{(item.product.price * item.quantity).toLocaleString()}</p>
                   </div>
                 </div>
               ))}
 
-              <div className="p-4 text-right">
-                <p className="text-lg">
-                  Subtotal (3 items):
-                  <span className="font-bold text-amazon-orange">৳4,02,000</span>
-                </p>
-              </div>
+              {cartItems.length > 0 && (
+                <div className="p-4 text-right">
+                  <p className="text-lg">
+                    Subtotal ({totalItems} items):
+                    <span className="font-bold text-amazon-orange ml-2">৳{totalPrice.toLocaleString()}</span>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -151,8 +137,8 @@ export default function CartPage() {
 
               <div className="mb-4">
                 <p className="text-lg mb-1">
-                  Subtotal (3 items):
-                  <span className="font-bold text-amazon-orange">৳4,02,000</span>
+                  Subtotal ({totalItems} items):
+                  <span className="font-bold text-amazon-orange ml-2">৳{totalPrice.toLocaleString()}</span>
                 </p>
                 <div className="flex items-start gap-2 text-xs">
                   <input type="checkbox" id="gift" className="mt-0.5" />
@@ -259,4 +245,3 @@ export default function CartPage() {
     </div>
   );
 }
-

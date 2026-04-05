@@ -1,41 +1,27 @@
 import { UserNav } from "@/components/auth/UserNav";
 import Link from "next/link";
-import { CreditCard, Headphones, Search, ShieldCheck, ShoppingCart, Truck } from "lucide-react";
+import { CreditCard, Headphones, ShieldCheck, ShoppingCart, Truck } from "lucide-react";
+import { SearchForm } from "@/components/ui/search-form";
+import dbConnect from "@/lib/mongodb";
+import { Product } from "@/lib/models/Product";
+import { AddToCartButton } from "@/components/ui/add-to-cart-button";
+import { CartBadge } from "@/components/ui/cart-badge";
 
-const featuredProducts = [
-  {
-    name: "Apple MacBook Pro M2, 16GB RAM, 512GB SSD",
-    image: "https://images.unsplash.com/photo-1675868374786-3edd36dddf04?w=300",
-    vendor: "Official Apple Store",
-    price: "1,85,000",
-  },
-  {
-    name: "iPhone 15 Pro Max - Blue Titanium",
-    image: "https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=300",
-    vendor: "Apple Bangladesh",
-    price: "1,45,000",
-  },
-  {
-    name: "Sony WH-1000XM5 Noise Canceling Headphones",
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300",
-    vendor: "Sony Official",
-    price: "32,500",
-  },
-  {
-    name: "Mechanical Gaming Keyboard RGB",
-    image: "https://images.unsplash.com/photo-1675868374786-3edd36dddf04?w=300",
-    vendor: "Razer Store",
-    price: "8,500",
-  },
-  {
-    name: "Logitech G502 Hero Gaming Mouse",
-    image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=300",
-    vendor: "Logitech G",
-    price: "4,500",
-  },
-];
+export default async function Home() {
+  await dbConnect();
+  
+  // Find products sorted by purchases descending, limit to 5
+  const featuredProductsData = await Product.find({ purchases: { $gt: 0 } })
+    .sort({ purchases: -1 })
+    .limit(5)
+    .lean();
 
-export default function Home() {
+  const featured = JSON.parse(JSON.stringify(featuredProductsData));
+  
+  // Fetch actual brands from database 
+  const dbBrands = await Product.distinct("about.brand");
+  const brands = dbBrands.filter(b => b).slice(0, 10);
+
   return (
     <div id="top" className="bg-amazon-background text-amazon-text flex min-h-screen flex-col">
       <nav className="bg-amazon text-white">
@@ -46,19 +32,7 @@ export default function Home() {
             </span>
           </Link>
 
-          <div className="focus-within:ring-amazon-secondary flex h-10 flex-1 overflow-hidden rounded-md bg-white focus-within:ring-3">
-            <select className="cursor-pointer border-r border-gray-300 bg-white px-2 text-xs text-black hover:bg-gray-100">
-              <option>All</option>
-              <option>Laptops</option>
-              <option>Phones</option>
-              <option>Accessories</option>
-              <option>Gaming</option>
-            </select>
-            <input type="text" placeholder="Search Gadgets, Laptops, Phones..." className="flex-1 px-3 text-black outline-none" />
-            <button className="flex items-center justify-center bg-amazon-secondary px-4 hover:bg-[#fa8900]">
-              <Search className="h-5 w-5 text-black" />
-            </button>
-          </div>
+          <SearchForm />
 
           <div className="flex items-center gap-4">
             <div className="hidden cursor-pointer items-center rounded-sm p-1 hover:outline hover:outline-1 hover:outline-white md:flex">
@@ -67,11 +41,7 @@ export default function Home() {
 
             <UserNav />
 
-            <Link href="/cart" className="relative flex cursor-pointer items-end rounded-sm p-1 hover:outline hover:outline-1 hover:outline-white">
-              <ShoppingCart className="h-8 w-8" />
-              <span className="text-amazon-secondary absolute top-0 left-1/2 -translate-x-1/2 text-sm font-bold">3</span>
-              <span className="hidden text-sm font-bold md:block">Cart</span>
-            </Link>
+            <CartBadge />
           </div>
         </div>
       </nav>
@@ -94,7 +64,7 @@ export default function Home() {
                 <img src="https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=300" className="mb-1 h-full w-full object-cover" alt="Laptop" />
                 <img src="https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=300" className="mb-1 h-full w-full object-cover" alt="Laptop" />
               </div>
-              <Link href="/products" className="mt-auto text-sm text-amazon-blue hover:text-red-700 hover:underline">
+              <Link href="/products?category=Laptops" className="mt-auto text-sm text-amazon-blue hover:text-red-700 hover:underline">
                 See all laptops
               </Link>
             </div>
@@ -104,62 +74,62 @@ export default function Home() {
               <div className="flex h-full w-full items-center justify-center overflow-hidden bg-gray-100">
                 <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500" className="h-full w-full object-cover" alt="Smartphone" />
               </div>
-              <Link href="/products" className="mt-auto text-sm text-amazon-blue hover:text-red-700 hover:underline">
+              <Link href="/products?category=Smartphone" className="mt-auto text-sm text-amazon-blue hover:text-red-700 hover:underline">
                 Shop smartphones
               </Link>
             </div>
 
             <div className="z-20 flex flex-col gap-4 bg-white p-4 shadow-sm">
-              <h2 className="text-xl font-bold">Accessories</h2>
+              <h2 className="text-xl font-bold">Audio</h2>
               <div className="flex h-full w-full items-center justify-center overflow-hidden bg-gray-100">
-                <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500" className="h-full w-full object-cover" alt="Accessories" />
+                <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500" className="h-full w-full object-cover" alt="Audio" />
               </div>
-              <Link href="/products" className="mt-auto text-sm text-amazon-blue hover:text-red-700 hover:underline">
-                Shop accessories
+              <Link href="/products?category=Audio" className="mt-auto text-sm text-amazon-blue hover:text-red-700 hover:underline">
+                Shop audio
               </Link>
             </div>
 
-            <div className="z-20 flex flex-col justify-between gap-4 bg-white p-4 shadow-sm">
-              <div className="shrink-0">
-                <h2 className="text-xl font-bold">Sign in for the best tech deals</h2>
-                <button className="mt-4 w-full rounded-md bg-amazon-yellow py-2 text-sm shadow-sm hover:bg-amazon-yellow_hover">Sign in securely</button>
+            <div className="z-20 flex flex-col gap-4 bg-white p-4 shadow-sm">
+              <h2 className="text-xl font-bold">Cameras</h2>
+              <div className="flex h-full w-full items-center justify-center overflow-hidden bg-gray-100">
+                <img src="https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=500" className="h-full w-full object-cover" alt="Camera" />
               </div>
-              <div className="mt-4 h-full grow">
-                <img src="https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=500" className="h-full w-full object-cover" alt="Tech" />
-              </div>
+              <Link href="/products?category=Camera" className="mt-auto text-sm text-amazon-blue hover:text-red-700 hover:underline">
+                Shop cameras
+              </Link>
             </div>
           </div>
 
-          <div className="mt-8 bg-white p-6 shadow-sm">
-            <div className="mb-4 flex items-center gap-2">
-              <h2 className="text-xl font-bold">Featured Products</h2>
-              <Link href="/products" className="text-sm text-amazon-blue hover:text-red-700 hover:underline">
-                View All
-              </Link>
-            </div>
+          {featured.length > 0 && (
+            <div className="mt-8 bg-white p-6 shadow-sm">
+              <div className="mb-4 flex items-center gap-2">
+                <h2 className="text-xl font-bold">Featured Products</h2>
+                <Link href="/products" className="text-sm text-amazon-blue hover:text-red-700 hover:underline">
+                  View All
+                </Link>
+              </div>
 
-            <div className="scrollbar-hide flex gap-6 overflow-x-auto pb-4">
-              {featuredProducts.map((product) => (
-                <div key={product.name} className="w-48 flex-none">
-                  <Link href="/details">
-                    <div className="mb-2 flex h-48 items-center justify-center bg-gray-50 p-2">
-                      <img src={product.image} className="h-full object-cover mix-blend-multiply" alt={product.name} />
+              <div className="scrollbar-hide flex gap-6 overflow-x-auto pb-4">
+                {featured.map((product: { _id: string; name: string; image: string; vendor: string; price: number }) => (
+                  <div key={product._id} className="w-48 flex-none">
+                    <Link href={`/details/${product._id}`}>
+                      <div className="mb-2 flex h-48 items-center justify-center bg-gray-50 p-2">
+                        <img src={product.image} className="h-full object-cover mix-blend-multiply" alt={product.name} />
+                      </div>
+                      <div className="line-clamp-2 text-sm text-amazon-blue hover:text-amazon-orange">{product.name}</div>
+                    </Link>
+                    <div className="text-xs text-gray-500">{product.vendor}</div>
+                    <div className="mt-1">
+                      <span className="text-xs align-top font-bold">৳</span>
+                      <span className="text-xl font-bold">{product.price.toLocaleString()}</span>
                     </div>
-                    <div className="line-clamp-2 text-sm text-amazon-blue hover:text-amazon-orange">{product.name}</div>
-                  </Link>
-                  <div className="text-xs text-gray-500">{product.vendor}</div>
-                  <div className="mt-1">
-                    <span className="text-xs align-top">৳</span>
-                    <span className="text-xl font-bold">{product.price}</span>
+                    <div className="mb-2 text-xs text-gray-500">Get it by Tomorrow</div>
+                    <AddToCartButton product={product} />
                   </div>
-                  <div className="mb-2 text-xs text-gray-500">Get it by Tomorrow</div>
-                  <button className="w-full rounded-md border border-amazon-secondary bg-amazon-yellow py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-amazon-yellow_hover">
-                    Add to Cart
-                  </button>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="mt-8 bg-white py-12">
@@ -202,14 +172,14 @@ export default function Home() {
           <h2 className="mb-6 text-2xl font-bold">Popular Categories</h2>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
             {[
-              ["Laptops", "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=200"],
-              ["Smartphones", "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200"],
-              ["Audio", "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200"],
-              ["Gaming", "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=200"],
-              ["Cameras", "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=200"],
-              ["Wearables", "https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?w=200"],
-            ].map(([label, image]) => (
-              <Link key={label} href="/products" className="rounded border border-gray-200 bg-white p-4 text-center transition-shadow hover:shadow-md">
+              ["Laptops & PCs", "Laptops", "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=200"],
+              ["Smartphones", "Smartphone", "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200"],
+              ["Audio", "Audio", "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200"],
+              ["Cameras", "Camera", "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=200"],
+              ["Wearables", "Wearables", "https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?w=200"],
+              ["All Products", "", "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=200"],
+            ].map(([label, query, image]) => (
+              <Link key={label} href={`/products${query ? `?category=${encodeURIComponent(query)}` : ''}`} className="rounded border border-gray-200 bg-white p-4 text-center transition-shadow hover:shadow-md">
                 <div className="mb-2 flex h-32 items-center justify-center">
                   <img src={image} className="h-full object-cover" alt={label} />
                 </div>
@@ -222,12 +192,15 @@ export default function Home() {
         <div className="mt-8 bg-white py-8">
           <div className="mx-auto max-w-[1500px] px-4">
             <h2 className="mb-6 text-2xl font-bold">Shop by Brand</h2>
-            <div className="flex gap-6 overflow-x-auto pb-4">
-              {["Apple", "Samsung", "Dell", "HP", "Lenovo", "Sony", "Razer", "Logitech"].map((brand) => (
-                <div key={brand} className="flex h-32 w-32 flex-none cursor-pointer items-center justify-center rounded border border-gray-200 bg-gray-50 transition-shadow hover:shadow-md">
-                  <span className="text-2xl font-bold text-gray-400">{brand}</span>
-                </div>
+            <div className="flex flex-wrap gap-4 pb-4">
+              {brands.map((brand: any) => (
+                <Link href={`/products?brand=${brand}`} key={brand} className="flex h-32 w-32 cursor-pointer items-center justify-center rounded border border-gray-200 bg-gray-50 transition-shadow hover:shadow-md">
+                  <span className="text-xl font-bold text-gray-500 text-center px-2">{brand}</span>
+                </Link>
               ))}
+              {brands.length === 0 && (
+                <div className="text-sm text-gray-500">No brands found in database.</div>
+              )}
             </div>
           </div>
         </div>

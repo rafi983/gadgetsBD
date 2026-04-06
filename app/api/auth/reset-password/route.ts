@@ -36,7 +36,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ message: "Password updated successfully" }, { status: 200 });
   } catch (error) {
-    console.error("Error in reset password:", error);
+
     return NextResponse.json({ message: "Error updating password" }, { status: 500 });
   }
 }

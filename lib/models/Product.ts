@@ -23,6 +23,8 @@ export interface IProduct extends Document {
   features?: string[];
   rating?: number;
   reviewsCount?: number;
+  shop?: any;
+  reviews?: any[];
 }
 
 const ProductSchema: Schema = new Schema({
@@ -37,9 +39,13 @@ const ProductSchema: Schema = new Schema({
   about: { type: Schema.Types.Mixed },
   features: { type: [String], default: [] },
   rating: { type: Number, default: 0 },
-  reviewsCount: { type: Number, default: 0 }
+  reviewsCount: { type: Number, default: 0 },
+  shop: { type: Schema.Types.Mixed },
+  reviews: { type: Array, default: [] }
 }, {
   timestamps: true,
+  strict: false
 });
 
-export const Product: Model<IProduct> = mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);
+delete mongoose.models.Product;
+export const Product: Model<IProduct> = mongoose.model<IProduct>('Product', ProductSchema);

@@ -25,10 +25,10 @@ export async function POST(req: Request) {
     const resetLink = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
 
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.log("=========================================");
-      console.log("No email credentials found. Reset link is:");
-      console.log(resetLink);
-      console.log("=========================================");
+
+
+
+
       return NextResponse.json({ message: "Password reset development link printed to console" }, { status: 200 });
     }
 
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ message: "Password reset email sent" }, { status: 200 });
   } catch (error) {
-    console.error("Error in forget-password:", error);
+
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });
   }
 }

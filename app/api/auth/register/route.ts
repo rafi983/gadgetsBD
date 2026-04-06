@@ -6,7 +6,7 @@ import { User } from "@/lib/models/User";
 export async function POST(req: Request) {
   try {
     const text = await req.text();
-    console.log("Raw request body:", text);
+
 
     if (!text) {
       return NextResponse.json({ message: "Empty request body" }, { status: 400 });
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     const type = parsed.type || parsed.userType || parsed.role || "Customer";
 
     if (!email || !password) {
-      console.log("Missing fields parsing result:", parsed);
+
       return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
     }
 
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      console.log("User already exists:", email);
+
       return NextResponse.json({ message: "User already exists" }, { status: 400 });
     }
 
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       user: { id: user._id, name: user.name, email: user.email, type: user.type } 
     }, { status: 201 });
   } catch (error) {
-    console.error("Error registering user:", error);
+
     return NextResponse.json({ message: "Error registering user" }, { status: 500 });
   }
 }

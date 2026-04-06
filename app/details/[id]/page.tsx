@@ -12,8 +12,10 @@ import { Product } from "@/lib/models/Product";
 import { notFound } from "next/navigation";
 import { SearchForm } from "@/components/ui/search-form";
 import { CartBadge } from "@/components/ui/cart-badge";
-import { AddToCartButton } from "@/components/ui/add-to-cart-button";
+import { BuyBox } from "@/components/ui/buy-box";
 import { ProductTabs } from "@/components/ui/product-tabs";
+
+export const dynamic = "force-dynamic";
 
 function StarRow({ size = 16 }: { size?: number }) {
   return (
@@ -30,7 +32,8 @@ function StarRow({ size = 16 }: { size?: number }) {
 export default async function DetailsPage({ params }: { params: any }) {
   await dbConnect();
   
-  const { id } = await params;
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
   let product: any = null;
   let relatedProducts: any[] = [];
   
@@ -143,33 +146,7 @@ export default async function DetailsPage({ params }: { params: any }) {
           </div>
 
           <div className="lg:col-span-3">
-            <div className="border border-gray-200 rounded p-4">
-              <div className="text-3xl text-amazon-orange mb-2">৳{product.price}</div>
-              <p className="text-sm mb-3"><span className="font-bold">FREE delivery</span> <strong>Tomorrow</strong></p>
-              <p className="text-green-600 font-bold text-sm mb-4">In Stock</p>
-
-              <div className="mb-4">
-                <label className="text-sm font-bold block mb-2">Quantity:</label>
-                <select className="w-20 border border-gray-300 rounded px-3 py-1 text-sm">
-                  <option>1</option>
-                  <option>2</option>
-                  <option>3</option>
-                  <option>4</option>
-                  <option>5</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <AddToCartButton product={product} />
-                <button className="w-full bg-amazon-secondary hover:bg-amazon-secondary_hover py-2 rounded-md shadow-sm text-sm font-medium text-white">Buy Now</button>
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-600">
-                <p className="mb-1"><ShieldCheck className="w-4 h-4 inline mr-1" /> Secure transaction</p>
-                <p className="mb-1"><Truck className="w-4 h-4 inline mr-1" /> Ships from Gadgets BD</p>
-                <p><Package className="w-4 h-4 inline mr-1" /> Sold by Official Apple Store</p>
-              </div>
-            </div>
+            <BuyBox product={product} />
           </div>
         </div>
 

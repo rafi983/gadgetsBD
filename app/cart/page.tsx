@@ -14,6 +14,7 @@ import { useCartStore } from "@/lib/store";
 import { useEffect, useState } from "react";
 import { CartBadge } from "@/components/ui/cart-badge";
 import { SearchForm } from "@/components/ui/search-form";
+import { HashLoader } from "react-spinners";
 
 export default function CartPage() {
   const [mounted, setMounted] = useState(false);
@@ -25,10 +26,13 @@ export default function CartPage() {
   const totalPrice = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
 
   useEffect(() => {
-    setMounted(true);
+    // Add a tiny deliberate delay to allow the loading spinner to actually play its animation
+    // and truly "neutralize" the flicker into a smooth transition.
+    const timer = setTimeout(() => {
+      setMounted(true);
+    }, 600);
+    return () => clearTimeout(timer);
   }, []);
-
-  if (!mounted) return null;
 
   return (
     <div id="top" className="bg-amazon-background text-amazon-text flex flex-col min-h-screen">
@@ -60,7 +64,7 @@ export default function CartPage() {
             <div className="bg-white p-4 mb-4 border-b border-gray-300">
               <h1 className="text-2xl font-normal mb-2">Shopping Cart</h1>
               <div className="text-sm text-gray-600">
-                {cartItems.length === 0 ? "Your cart is empty. " : ""}
+                {(!mounted || cartItems.length === 0) ? "Your cart is empty. " : ""}
                 <Link href="/products" className="text-amazon-blue hover:underline">
                   Continue shopping
                 </Link>
@@ -68,60 +72,69 @@ export default function CartPage() {
             </div>
 
             <div className="bg-white">
-              {cartItems.map((item) => (
-                <div key={item.product._id} className="p-4 border-b border-gray-300 flex gap-4 hover:bg-gray-50">
-                  <div className="w-32 h-32 flex-shrink-0">
-                    <img
-                      src={item.product.image}
-                      className="w-full h-full object-cover rounded border border-gray-200 mix-blend-multiply"
-                      alt={item.product.name}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium text-base mb-1">
-                      <Link href={`/details/${item.product._id}`} className="text-amazon-blue hover:text-amazon-orange hover:underline">
-                        {item.product.name}
-                      </Link>
-                    </h3>
-                    <p className="text-sm text-green-700 font-medium">In Stock</p>
-                    <p className="text-xs text-gray-600 mt-1">Sold by: {item.product.vendor}</p>
-                    <p className="text-xs text-gray-600">Eligible for FREE Shipping</p>
-
-                    <div className="flex items-center gap-4 mt-3">
-                      <div className="flex items-center gap-2">
-                        <label className="text-xs text-gray-600">Qty:</label>
-                        <select 
-                          value={item.quantity}
-                          onChange={(e) => updateQuantity(item.product._id, parseInt(e.target.value))}
-                          className="border border-gray-400 rounded-md px-2 py-1 text-sm bg-gray-50 outline-none focus:ring-1 focus:ring-amazon-blue"
-                        >
-                          {[1,2,3,4,5,6,7,8,9,10].map(num => (
-                            <option key={num} value={num}>{num}</option>
-                          ))}
-                        </select>
+              {!mounted ? (
+                <div className="flex flex-col items-center justify-center p-16 text-gray-500 space-y-6">
+                  <HashLoader color="#fa8900" size={60} />
+                  <p className="text-sm font-medium animate-pulse tracking-wide">Loading your cart...</p>
+                </div>
+              ) : (
+                <>
+                  {cartItems.map((item) => (
+                    <div key={item.product._id} className="p-4 border-b border-gray-300 flex gap-4 hover:bg-gray-50">
+                      <div className="w-32 h-32 flex-shrink-0">
+                        <img
+                          src={item.product.image}
+                          className="w-full h-full object-cover rounded border border-gray-200 mix-blend-multiply"
+                          alt={item.product.name}
+                        />
                       </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium text-base mb-1">
+                          <Link href={`/details/${item.product._id}`} className="text-amazon-blue hover:text-amazon-orange hover:underline">
+                            {item.product.name}
+                          </Link>
+                        </h3>
+                        <p className="text-sm text-green-700 font-medium">In Stock</p>
+                        <p className="text-xs text-gray-600 mt-1">Sold by: {item.product.vendor}</p>
+                        <p className="text-xs text-gray-600">Eligible for FREE Shipping</p>
 
-                      <button 
-                        onClick={() => removeItem(item.product._id)}
-                        className="text-sm text-amazon-blue hover:text-amazon-orange hover:underline"
-                      >
-                        Delete
-                      </button>
+                        <div className="flex items-center gap-4 mt-3">
+                          <div className="flex items-center gap-2">
+                            <label className="text-xs text-gray-600">Qty:</label>
+                            <select
+                              value={item.quantity}
+                              onChange={(e) => updateQuantity(item.product._id, parseInt(e.target.value))}
+                              className="border border-gray-400 rounded-md px-2 py-1 text-sm bg-gray-50 outline-none focus:ring-1 focus:ring-amazon-blue"
+                            >
+                              {[1,2,3,4,5,6,7,8,9,10].map(num => (
+                                <option key={num} value={num}>{num}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <button
+                            onClick={() => removeItem(item.product._id)}
+                            className="text-sm text-amazon-blue hover:text-amazon-orange hover:underline"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-amazon-orange">৳{(item.product.price * item.quantity).toLocaleString()}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-amazon-orange">৳{(item.product.price * item.quantity).toLocaleString()}</p>
-                  </div>
-                </div>
-              ))}
+                  ))}
 
-              {cartItems.length > 0 && (
-                <div className="p-4 text-right">
-                  <p className="text-lg">
-                    Subtotal ({totalItems} items):
-                    <span className="font-bold text-amazon-orange ml-2">৳{totalPrice.toLocaleString()}</span>
-                  </p>
-                </div>
+                  {cartItems.length > 0 && (
+                    <div className="p-4 text-right">
+                      <p className="text-lg">
+                        Subtotal ({totalItems} items):
+                        <span className="font-bold text-amazon-orange ml-2">৳{totalPrice.toLocaleString()}</span>
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -137,8 +150,8 @@ export default function CartPage() {
 
               <div className="mb-4">
                 <p className="text-lg mb-1">
-                  Subtotal ({totalItems} items):
-                  <span className="font-bold text-amazon-orange ml-2">৳{totalPrice.toLocaleString()}</span>
+                  Subtotal ({mounted ? totalItems : 0} items):
+                  <span className="font-bold text-amazon-orange ml-2">৳{mounted ? totalPrice.toLocaleString() : 0}</span>
                 </p>
                 <div className="flex items-start gap-2 text-xs">
                   <input type="checkbox" id="gift" className="mt-0.5" />

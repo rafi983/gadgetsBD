@@ -1,8 +1,43 @@
+"use client";
+
 import { UserNav } from "@/components/auth/UserNav";
 import Link from "next/link";
 import { Check, ChevronDown, Download, Search, ShoppingCart } from "lucide-react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
-export default function SuccessPage() {
+function SuccessPageContent() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
+  const [order, setOrder] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (id) {
+      fetch(`/api/orders/${id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setOrder(data);
+          setLoading(false);
+        })
+        .catch((err) => {
+
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
+  }, [id]);
+
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  if (!order || order.message) {
+    return <div className="min-h-screen flex items-center justify-center">Order not found</div>;
+  }
+
   return (
     <div className="bg-white text-amazon-text flex min-h-screen flex-col">
       <nav className="bg-amazon text-white">
@@ -36,12 +71,12 @@ export default function SuccessPage() {
             <p className="text-sm">Confirmation will be sent to your email.</p>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-2">
-              <div className="flex-1 text-sm bg-gray-50 p-4 border border-gray-200 rounded"><span className="font-bold block mb-1">Shipping to John Doe</span><p className="text-gray-600">123 Main St, Apartment 4B<br />Dhaka, 1212</p></div>
-              <div className="flex-1 text-sm bg-gray-50 p-4 border border-gray-200 rounded"><span className="font-bold block mb-1">Order Number</span><p className="text-gray-600 font-mono">#GB-2025-001234</p><p className="text-xs text-gray-500 mt-2">Placed on Jan 20, 2025</p></div>
+              <div className="flex-1 text-sm bg-gray-50 p-4 border border-gray-200 rounded"><span className="font-bold block mb-1">Shipping to {order.shippingAddress?.name || "Customer"}</span><p className="text-gray-600">{order.shippingAddress?.street || "Address unavailable"}<br />{order.shippingAddress?.city || "City unavailable"}, {order.shippingAddress?.country || ""}</p></div>
+              <div className="flex-1 text-sm bg-gray-50 p-4 border border-gray-200 rounded"><span className="font-bold block mb-1">Order Number</span><p className="text-gray-600 font-mono">#{order._id?.toString().substring(order._id.toString().length - 8).toUpperCase()}</p><p className="text-xs text-gray-500 mt-2">Placed on {new Date(order.createdAt).toLocaleDateString()}</p></div>
             </div>
 
             <div className="pt-4 border-t border-gray-200 flex flex-col sm:flex-row gap-4 items-center">
-              <button className="w-full sm:w-auto px-8 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 shadow-xs transition-colors text-center flex items-center justify-center gap-2"><Download className="w-4 h-4" />Download Invoice</button>
+              <button onClick={() => window.open(`/api/invoice?orderId=${order._id}`, "_blank")} className="w-full sm:w-auto px-8 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 shadow-xs transition-colors text-center flex items-center justify-center gap-2"><Download className="w-4 h-4" />Download Invoice</button>
               <Link href="/bookings" className="w-full sm:w-auto px-8 py-2 border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 shadow-xs transition-colors text-center">View All Orders</Link>
               <Link href="/" className="w-full sm:w-auto px-8 py-2 bg-amazon-yellow hover:bg-amazon-yellow_hover border border-amazon-secondary rounded-md text-sm font-bold shadow-xs transition-colors text-center">Continue Shopping</Link>
             </div>
@@ -51,27 +86,23 @@ export default function SuccessPage() {
         <div className="mt-12 space-y-6">
           <h2 className="text-2xl font-normal border-b border-gray-200 pb-4">Order Details</h2>
 
-          {[
-            ['Apple MacBook Pro 16" M2 Max - 32GB RAM, 1TB SSD', '৳3,45,000', 'https://images.unsplash.com/photo-1675868374786-3edd36dddf04?w=200'],
-            ['Sony WH-1000XM5 Wireless Noise Canceling Headphones', '৳38,500', 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200'],
-            ['Razer BlackWidow V4 Pro Mechanical Gaming Keyboard', '৳18,500', 'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=200'],
-          ].map(([name, price, image], idx) => (
-            <div key={name} className={`flex gap-4 items-start ${idx > 0 ? "pt-4 border-t border-gray-100" : ""}`}>
-              <img src={image} className="w-20 h-20 object-cover border border-gray-200 rounded" alt="Item" />
+          {order.items?.map((item: any, idx: number) => (
+            <div key={idx} className={`flex gap-4 items-start ${idx > 0 ? "pt-4 border-t border-gray-100" : ""}`}>
+              <img src={item.product?.image || "https://images.unsplash.com/photo-1675868374786-3edd36dddf04?w=200"} className="w-20 h-20 object-cover border border-gray-200 rounded" alt="Item" />
               <div>
-                <Link href="/details" className="text-amazon-blue hover:underline font-bold text-sm">{name}</Link>
-                <p className="text-xs text-gray-500 mt-1">Quantity: 1</p>
-                <p className="text-xs text-amazon-orange font-bold mt-1">{price}</p>
+                <Link href={`/details/${item.product?._id}`} className="text-amazon-blue hover:underline font-bold text-sm">{item.product?.name}</Link>
+                <p className="text-xs text-gray-500 mt-1">Quantity: {item.quantity}</p>
+                <p className="text-xs text-amazon-orange font-bold mt-1">৳{(item.price * item.quantity).toLocaleString()}</p>
               </div>
             </div>
           ))}
 
           <div className="pt-4 border-t border-gray-200">
             <div className="max-w-sm ml-auto space-y-2 text-sm">
-              <div className="flex justify-between"><span>Subtotal:</span><span>৳4,02,000</span></div>
+              <div className="flex justify-between"><span>Subtotal:</span><span>৳{order.totalPrice?.toLocaleString()}</span></div>
               <div className="flex justify-between"><span>Delivery Fee:</span><span className="text-green-600 font-bold">FREE</span></div>
-              <div className="flex justify-between border-b border-gray-200 pb-2"><span>Service Fee:</span><span>৳500</span></div>
-              <div className="flex justify-between text-lg font-bold text-amazon-orange"><span>Total:</span><span>৳4,02,500</span></div>
+              <div className="flex justify-between border-b border-gray-200 pb-2"><span>Service Fee:</span><span>৳0</span></div>
+              <div className="flex justify-between text-lg font-bold text-amazon-orange"><span>Total:</span><span>৳{order.totalPrice?.toLocaleString()}</span></div>
             </div>
           </div>
         </div>
@@ -88,6 +119,14 @@ export default function SuccessPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <SuccessPageContent />
+    </Suspense>
   );
 }
 

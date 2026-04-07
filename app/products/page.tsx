@@ -27,6 +27,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: any
 	if (category && category !== "All Categories" && category !== "All") {
 		if (category.toLowerCase() === 'accessories' || category.toLowerCase() === 'accessor') {
 			query.category = { $in: [/Audio/i, /Camera/i, /Wearable/i, /Accessor/i] };
+		} else if (category.toLowerCase().includes('laptop') || category.toLowerCase().includes('computer')) {
+			query.category = { $regex: "laptop|computer", $options: "i" };
+		} else if (category.toLowerCase().includes('phone') || category.toLowerCase().includes('tablet')) {
+			query.category = { $regex: "phone|tablet", $options: "i" };
 		} else {
 			query.category = { $regex: category, $options: "i" };
 		}

@@ -14,7 +14,7 @@ import { useCartStore } from "@/lib/store";
 import { useEffect, useState } from "react";
 import { CartBadge } from "@/components/ui/cart-badge";
 import { SearchForm } from "@/components/ui/search-form";
-import { HashLoader } from "react-spinners";
+import { Loader2 } from "lucide-react";
 
 export default function CartPage() {
   const [mounted, setMounted] = useState(false);
@@ -26,12 +26,7 @@ export default function CartPage() {
   const totalPrice = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
 
   useEffect(() => {
-    // Add a tiny deliberate delay to allow the loading spinner to actually play its animation
-    // and truly "neutralize" the flicker into a smooth transition.
-    const timer = setTimeout(() => {
-      setMounted(true);
-    }, 600);
-    return () => clearTimeout(timer);
+    setMounted(true);
   }, []);
 
   return (
@@ -74,8 +69,8 @@ export default function CartPage() {
             <div className="bg-white">
               {!mounted ? (
                 <div className="flex flex-col items-center justify-center p-16 text-gray-500 space-y-6">
-                  <HashLoader color="#fa8900" size={60} />
-                  <p className="text-sm font-medium animate-pulse tracking-wide">Loading your cart...</p>
+                  <Loader2 className="w-10 h-10 animate-spin text-amazon-orange" />
+                  <p className="text-sm font-medium tracking-wide">Loading your cart...</p>
                 </div>
               ) : (
                 <>

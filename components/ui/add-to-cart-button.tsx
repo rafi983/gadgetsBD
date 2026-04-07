@@ -18,7 +18,6 @@ export function AddToCartButton({ product }: { product: ProductType }) {
   const handleAddToCart = () => {
     // Basic Add to Cart Implementation here.
     addItem(product);
-    console.log("Added to cart:", product.name);
     setClicked(true);
     setTimeout(() => setClicked(false), 2000);
   };

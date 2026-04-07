@@ -60,6 +60,19 @@ export default function BookingsPage() {
     }
   };
 
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        fetchOrders();
+      }
+    } catch (e) {}
+  };
+
   const handleReorder = (items: any[]) => {
     if (!items || items.length === 0) return;
     
@@ -76,6 +89,126 @@ export default function BookingsPage() {
   const handleDownloadInvoice = (orderId: string) => {
     window.open(`/api/invoice?orderId=${orderId}`, "_blank");
   };
+
+  if ((session?.user as any)?.type === "ShopOwner") {
+    return (
+      <div className="bg-amazon-background text-amazon-text flex min-h-screen flex-col">
+        <nav className="bg-amazon p-3 text-white shadow-md">
+          <div className="max-w-[1500px] mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <Link href="/" className="flex items-center">
+                <span className="text-2xl font-bold tracking-tighter">
+                  gadgets<span className="italic text-amazon-secondary">BD</span>
+                  <span className="text-sm font-normal ml-2 rounded bg-gray-700 px-2 py-0.5">seller central</span>
+                </span>
+              </Link>
+            </div>
+            <div className="flex items-center gap-4 text-sm font-medium">
+              <Link href="/manage-list" className="hover:underline">Catalog</Link>
+              <Link href="/bookings" className="underline decoration-amazon-secondary decoration-2 underline-offset-4">Orders</Link>
+              <div className="h-4 w-px bg-gray-600" />
+              <div className="flex cursor-pointer items-center gap-1">
+                <Search className="h-4 w-4 hidden" />
+                <span>Shop Owner</span>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <main className="w-full p-6">
+          <div className="max-w-[1500px] mx-auto">
+            <div className="mb-6 flex items-center justify-between">
+              <h1 className="text-2xl font-normal">Manage Orders</h1>
+            </div>
+
+            <div className="bg-white border border-gray-300 rounded shadow-sm p-4 mb-6 flex flex-wrap items-center gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="font-bold">Status:</span>
+                <select className="rounded border border-gray-300 px-2 py-1 outline-none focus:ring-1 focus:ring-amazon-blue">
+                  <option>All Orders</option>
+                  <option>Pending</option>
+                  <option>Confirmed</option>
+                  <option>Shipped</option>
+                  <option>Delivered</option>
+                </select>
+              </div>
+              <div className="flex flex-1 items-center gap-2 border-l border-gray-300 pl-4">
+                <div className="relative w-full max-w-sm">
+                  <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <input type="text" placeholder="Search by Order ID or Customer" className="w-full rounded border border-gray-300 py-1 pl-8 pr-2 outline-none focus:ring-1 focus:ring-amazon-blue" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-300 rounded shadow-sm overflow-x-auto">
+              <table className="w-full border-collapse text-left text-sm">
+                <thead className="bg-gray-100 border-b border-gray-300 text-[11px] font-bold uppercase tracking-wider text-gray-600">
+                  <tr>
+                    <th className="p-3">Order ID & Date</th>
+                    <th className="p-3">Customer Details</th>
+                    <th className="p-3">Product Name</th>
+                    <th className="p-3">Qty</th>
+                    <th className="p-3">Price (৳)</th>
+                    <th className="p-3 text-right">Fulfillment Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {loading ? (
+                    <tr><td colSpan={6} className="p-4 text-center">Loading orders...</td></tr>
+                  ) : orders.length === 0 ? (
+                    <tr><td colSpan={6} className="p-4 text-center text-gray-500">No orders found.</td></tr>
+                  ) : (
+                    orders.map((order: any) =>
+                      order.items.map((item: any, idx: number) => (
+                        <tr key={`${order._id}-${idx}`} className="hover:bg-gray-50">
+                          <td className="p-3">
+                            <div className="font-mono text-xs mb-1">#{order._id.substring(order._id.length - 8).toUpperCase()}</div>
+                            <div className="text-gray-500 text-xs">{new Date(order.createdAt).toLocaleDateString()}</div>
+                          </td>
+                          <td className="p-3">
+                            <div className="font-medium text-amazon-blue">{order.shippingAddress?.name || "Customer"}</div>
+                            <div className="text-xs text-gray-500">{order.shippingAddress?.city}, {order.shippingAddress?.country}</div>
+                          </td>
+                          <td className="p-3">
+                            <div className="flex items-center gap-3">
+                              <img src={item.product?.image || "https://images.unsplash.com/photo-1675868374786-3edd36dddf04"} className="h-10 w-10 rounded border border-gray-200 object-cover" alt="Product" />
+                              <div className="font-medium text-xs max-w-[200px] truncate">{item.product?.name || "Unknown"}</div>
+                            </div>
+                          </td>
+                          <td className="p-3 font-bold">{item.quantity}</td>
+                          <td className="p-3 font-bold">{(item.price * item.quantity).toLocaleString()}</td>
+                          <td className="p-3 text-right">
+                            <select
+                              value={order.status}
+                              onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                              className="border border-gray-300 bg-gray-50 text-gray-700 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-amazon-blue"
+                            >
+                              <option value="Pending">Pending</option>
+                              <option value="Confirmed">Confirmed</option>
+                              <option value="Shipped">Shipped</option>
+                              <option value="Delivered">Delivered</option>
+                              <option value="Cancelled">Cancelled</option>
+                            </select>
+                          </td>
+                        </tr>
+                      ))
+                    )
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </main>
+
+        <footer className="mt-auto border-t border-gray-300 bg-white py-6">
+          <div className="max-w-[1500px] mx-auto text-center text-xs text-gray-500">
+            <p>&copy; 2025 Gadgets BD Seller Central. All rights reserved by LWS.</p>
+          </div>
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -209,62 +342,83 @@ export default function BookingsPage() {
                         </p>
 
                         <div className="mt-2">
-                          <span
-                            className={`inline-block px-3 py-1 text-xs font-bold rounded-full ${
-                              order.status === "Delivered"
-                                ? "bg-green-100 text-green-700"
-                                : order.status === "Cancelled"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-blue-100 text-blue-700"
-                            }`}
-                          >
-                            {order.status === "Delivered" && (
-                              <CheckCircle className="w-3 h-3 inline mr-1" />
-                            )}
-                            {order.status === "Shipped" && (
-                              <Truck className="w-3 h-3 inline mr-1" />
-                            )}
-                            {order.status === "Cancelled" && (
-                              <XCircle className="w-3 h-3 inline mr-1" />
-                            )}
-                            {order.status}
-                          </span>
+                          {(session?.user as any)?.type === "ShopOwner" ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-gray-600">Update Status:</span>
+                              <select
+                                value={order.status}
+                                onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                                className="border border-blue-300 bg-blue-50 text-blue-700 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-amazon-blue"
+                              >
+                                <option value="Pending">Pending</option>
+                                <option value="Confirmed">Confirmed</option>
+                                <option value="Shipped">Shipped</option>
+                                <option value="Delivered">Delivered</option>
+                                <option value="Cancelled">Cancelled</option>
+                              </select>
+                            </div>
+                          ) : (
+                            <span
+                              className={`inline-block px-3 py-1 text-xs font-bold rounded-full ${
+                                order.status === "Delivered"
+                                  ? "bg-green-100 text-green-700"
+                                  : order.status === "Cancelled"
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-blue-100 text-blue-700"
+                              }`}
+                            >
+                              {order.status === "Delivered" && (
+                                <CheckCircle className="w-3 h-3 inline mr-1" />
+                              )}
+                              {order.status === "Shipped" && (
+                                <Truck className="w-3 h-3 inline mr-1" />
+                              )}
+                              {order.status === "Cancelled" && (
+                                <XCircle className="w-3 h-3 inline mr-1" />
+                              )}
+                              {order.status}
+                            </span>
+                          )}
                         </div>
 
                         <div className="flex flex-wrap gap-2 mt-4">
-                          <button
-                            onClick={() => handleDownloadInvoice(order._id)}
-                            className="px-4 py-1.5 border border-gray-300 rounded-md text-xs hover:bg-gray-50 flex items-center gap-1"
-                          >
-                            <Download className="w-3 h-3" />
-                            Download Invoice
-                          </button>
+                          {(session?.user as any)?.type !== "ShopOwner" && (
+                            <>
+                              <button
+                                onClick={() => handleDownloadInvoice(order._id)}
+                                className="px-4 py-1.5 border border-gray-300 rounded-md text-xs hover:bg-gray-50 flex items-center gap-1"
+                              >
+                                <Download className="w-3 h-3" />
+                                Download Invoice
+                              </button>
 
-                          {order.status === "Delivered" && (
-                            <Link
-                              href={`/review-modal?productId=${item.product?._id}`}
-                              className="px-4 py-1.5 border border-gray-300 rounded-md text-xs hover:bg-gray-50 inline-block text-center flex items-center justify-center"
-                            >
-                              Write a Review
-                            </Link>
-                          )}
+                              {order.status === "Delivered" && (
+                                <Link
+                                  href={`/review-modal?productId=${item.product?._id}`}
+                                  className="px-4 py-1.5 border border-gray-300 rounded-md text-xs hover:bg-gray-50 inline-block text-center flex items-center justify-center"
+                                >
+                                  Write a Review
+                                </Link>
+                              )}
 
-                          <button
-                            onClick={() => handleReorder(order.items)}
-                            className="px-4 py-1.5 border border-gray-300 rounded-md text-xs hover:bg-gray-50"
-                          >
-                            Buy it again
-                          </button>
+                              <button
+                                onClick={() => handleReorder(order.items)}
+                                className="px-4 py-1.5 border border-gray-300 rounded-md text-xs hover:bg-gray-50"
+                              >
+                                Buy it again
+                              </button>
 
-                          {/* Cancel Order capability if Pending */}
-                          {order.status === "Pending" && (
-                            <button
-                              onClick={() => handleCancelOrder(order._id)}
-                              className="px-4 py-1.5 border border-red-300 bg-red-50 text-red-700 rounded-md text-xs hover:bg-red-100 flex items-center gap-1 mt-2 sm:mt-0"
-                            >
-                              <XCircle className="w-3 h-3" />
-                              Cancel Order
-                            </button>
+                              {/* Cancel Order capability if Pending */}
+                              {order.status === "Pending" && (
+                                <button
+                                  onClick={() => handleCancelOrder(order._id)}
+                                  className="px-4 py-1.5 border border-red-300 bg-red-50 text-red-700 rounded-md text-xs hover:bg-red-100 flex items-center gap-1 mt-2 sm:mt-0"
+                                >
+                                  <XCircle className="w-3 h-3" />
+                                  Cancel Order
+                                </button>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
@@ -398,4 +552,3 @@ export default function BookingsPage() {
     </div>
   );
 }
-

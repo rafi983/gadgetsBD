@@ -1,74 +1,23 @@
 import Link from "next/link";
-import { Eye, EyeOff, Pencil, Search, Trash2, User } from "lucide-react";
+import { Search, User } from "lucide-react";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/authOptions";
+import { redirect } from "next/navigation";
+import connectToDatabase from "@/lib/mongodb";
+import { Product } from "@/lib/models/Product";
+import ManageListClient from "./ManageListClient";
 
-export default function ManageListPage() {
-  const items = [
-    {
-      status: "In Stock",
-      statusClass: "bg-green-100 text-green-700",
-      image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=100",
-      name: 'Apple MacBook Pro 16" M2 Max',
-      sku: "MBP-M2-16-1TB",
-      category: "Laptops & Computers",
-      brand: "Apple",
-      price: "3,45,000",
-      available: "24",
-      availableClass: "text-green-600",
-      visible: false,
-    },
-    {
-      status: "In Stock",
-      statusClass: "bg-green-100 text-green-700",
-      image: "https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=100",
-      name: "iPhone 15 Pro Max - Blue Titanium",
-      sku: "IP15PM-BT-256",
-      category: "Smartphones & Tablets",
-      brand: "Apple",
-      price: "1,45,000",
-      available: "15",
-      availableClass: "text-green-600",
-      visible: false,
-    },
-    {
-      status: "Low Stock",
-      statusClass: "bg-yellow-100 text-yellow-700",
-      image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=100",
-      name: "Sony WH-1000XM5 Headphones",
-      sku: "SONY-WH1000XM5",
-      category: "Audio & Headphones",
-      brand: "Sony",
-      price: "38,500",
-      available: "3",
-      availableClass: "text-yellow-600",
-      visible: false,
-    },
-    {
-      status: "In Stock",
-      statusClass: "bg-green-100 text-green-700",
-      image: "https://images.unsplash.com/photo-1527690710675-4ae7d334803b?w=100",
-      name: "Razer BlackWidow V4 Pro Keyboard",
-      sku: "RZR-BW-V4-PRO",
-      category: "Gaming Accessories",
-      brand: "Razer",
-      price: "18,500",
-      available: "12",
-      availableClass: "text-green-600",
-      visible: false,
-    },
-    {
-      status: "Out of Stock",
-      statusClass: "bg-red-100 text-red-700",
-      image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=100",
-      name: "Logitech G502 Hero Gaming Mouse",
-      sku: "LOG-G502-HERO",
-      category: "Gaming Accessories",
-      brand: "Logitech",
-      price: "8,500",
-      available: "0",
-      availableClass: "text-red-600",
-      visible: true,
-    },
-  ] as const;
+export const dynamic = "force-dynamic";
+
+export default async function ManageListPage() {
+  const session = await getServerSession(authOptions);
+  if (!session || (session.user as any).type !== "ShopOwner") {
+    redirect("/");
+  }
+
+  await connectToDatabase();
+  const products = await Product.find({ "shop.id": (session.user as any).id }).lean();
+  const serializedProducts = JSON.parse(JSON.stringify(products));
 
   return (
     <div className="bg-amazon-background text-amazon-text flex min-h-screen flex-col">
@@ -151,60 +100,10 @@ export default function ManageListPage() {
             </div>
           </div>
 
-          <div className="bg-white border border-gray-300 rounded shadow-sm overflow-x-auto">
-            <table className="w-full border-collapse text-left text-sm">
-              <thead className="bg-gray-100 border-b border-gray-300 text-[11px] font-bold uppercase tracking-wider text-gray-600">
-                <tr>
-                  <th className="w-12 p-3 text-center"><input type="checkbox" /></th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3">Image</th>
-                  <th className="p-3">Product Name</th>
-                  <th className="p-3">Category</th>
-                  <th className="p-3">Brand</th>
-                  <th className="p-3">Price (৳)</th>
-                  <th className="p-3">Available</th>
-                  <th className="p-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {items.map((item) => (
-                  <tr key={item.sku} className="hover:bg-gray-50">
-                    <td className="p-3 text-center"><input type="checkbox" /></td>
-                    <td className="p-3">
-                      <span className={`inline-block rounded px-2 py-1 text-xs font-bold ${item.statusClass}`}>{item.status}</span>
-                    </td>
-                    <td className="p-3">
-                      <img src={item.image} className="h-12 w-12 rounded border border-gray-200 object-cover" alt={item.name} />
-                    </td>
-                    <td className="p-3">
-                      <div className="font-medium">{item.name}</div>
-                      <div className="text-xs text-gray-500">SKU: {item.sku}</div>
-                    </td>
-                    <td className="p-3 text-gray-600">{item.category}</td>
-                    <td className="p-3 text-gray-600">{item.brand}</td>
-                    <td className="p-3 font-bold">{item.price}</td>
-                    <td className="p-3"><span className={`font-bold ${item.availableClass}`}>{item.available}</span></td>
-                    <td className="p-3">
-                      <div className="flex items-center justify-end gap-2">
-                        <button className="rounded p-1.5 hover:bg-gray-100" title="Edit">
-                          <Pencil className="h-4 w-4 text-amazon-blue" />
-                        </button>
-                        <button className="rounded p-1.5 hover:bg-gray-100" title={item.visible ? "Publish" : "Unpublish"}>
-                          {item.visible ? <Eye className="h-4 w-4 text-gray-600" /> : <EyeOff className="h-4 w-4 text-gray-600" />}
-                        </button>
-                        <button className="rounded p-1.5 hover:bg-gray-100" title="Delete">
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ManageListClient initialProducts={serializedProducts} />
 
           <div className="mt-6 flex items-center justify-between text-sm text-gray-600">
-            <div>Showing 1-5 of 5 products</div>
+            <div>Showing 1-{serializedProducts.length} of {serializedProducts.length} products</div>
             <div className="flex gap-2">
               <button className="rounded border border-gray-300 px-3 py-1 hover:bg-gray-50 disabled:opacity-50" disabled>Previous</button>
               <button className="rounded border border-gray-300 bg-amazon-yellow px-3 py-1 font-bold">1</button>

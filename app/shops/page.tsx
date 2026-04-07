@@ -9,72 +9,13 @@ import {
   Star,
   StarHalf,
 } from "lucide-react";
+import dbConnect from "@/lib/mongodb";
+import { User } from "@/lib/models/User";
+import { CartBadge } from "@/components/ui/cart-badge";
+import { SearchForm } from "@/components/ui/search-form";
 
-const shopCards = [
-  {
-    name: "Tech Hub BD",
-    location: "Dhaka, Bangladesh",
-    ratings: "3,240 ratings",
-    desc: "Leading retailer of laptops, computers, and accessories. Official partner of Apple, Dell, and HP with 10+ years of experience.",
-    spec: "Laptops & PCs",
-    image: "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=600",
-    stars: "5",
-    gradient: "from-blue-50 to-blue-100",
-  },
-  {
-    name: "Mobile World",
-    location: "Chittagong, Bangladesh",
-    ratings: "2,856 ratings",
-    desc: "Authorized dealer of Samsung, Apple, and Xiaomi smartphones. Offering genuine products with official warranty and after-sales service.",
-    spec: "Smartphones",
-    image: "https://images.unsplash.com/photo-1556656793-08538906a9f8?w=600",
-    stars: "4.5",
-    gradient: "from-purple-50 to-purple-100",
-  },
-  {
-    name: "Gaming Zone BD",
-    location: "Dhaka, Bangladesh",
-    ratings: "4,105 ratings",
-    desc: "Premium gaming peripherals and accessories. Exclusive partner of Razer, Logitech G, and Corsair with expert gaming setup consultation.",
-    spec: "Gaming Gear",
-    image: "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=600",
-    stars: "5",
-    gradient: "from-red-50 to-red-100",
-  },
-  {
-    name: "Audio Haven",
-    location: "Sylhet, Bangladesh",
-    ratings: "1,567 ratings",
-    desc: "Specialist in premium audio equipment. Authorized retailer of Sony, Bose, and JBL with professional audio consultation services.",
-    spec: "Audio & Headphones",
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600",
-    stars: "4",
-    gradient: "from-green-50 to-green-100",
-  },
-  {
-    name: "Camera Corner",
-    location: "Rajshahi, Bangladesh",
-    ratings: "987 ratings",
-    desc: "Professional photography equipment and accessories. Canon, Nikon, and Sony authorized dealer with expert photography guidance.",
-    spec: "Cameras & Lenses",
-    image: "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=600",
-    stars: "4.5",
-    gradient: "from-yellow-50 to-yellow-100",
-  },
-  {
-    name: "Smart Watch Pro",
-    location: "Dhaka, Bangladesh",
-    ratings: "2,345 ratings",
-    desc: "Leading retailer of smartwatches and wearables. Official partner of Apple Watch, Samsung Galaxy Watch, and Fitbit with health tracking expertise.",
-    spec: "Wearables",
-    image: "https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?w=600",
-    stars: "5",
-    gradient: "from-indigo-50 to-indigo-100",
-  },
-];
-
-function Rating({ value }: { value: string }) {
-  if (value === "4.5") {
+function Rating({ value }: { value: string | number }) {
+  if (value === "4.5" || value === 4.5) {
     return (
       <div className="flex text-amazon-secondary">
         {[1, 2, 3, 4].map((s) => (
@@ -94,7 +35,12 @@ function Rating({ value }: { value: string }) {
   );
 }
 
-export default function ShopsPage() {
+export default async function ShopsPage() {
+  await dbConnect();
+
+  const shopOwnersData = await User.find({ type: "ShopOwner" }).lean();
+  const shopOwners = JSON.parse(JSON.stringify(shopOwnersData));
+
   return (
     <div id="top" className="bg-amazon-background text-amazon-text flex min-h-screen flex-col">
       <nav className="bg-amazon text-white">
@@ -103,19 +49,12 @@ export default function ShopsPage() {
             <span className="text-2xl font-bold tracking-tighter">gadgets<span className="italic text-amazon-secondary">BD</span></span>
           </Link>
 
-          <div className="flex-1 flex h-10 rounded-md overflow-hidden focus-within:ring-3 focus-within:ring-amazon-secondary">
-            <div className="bg-gray-100 flex items-center px-2 border-r border-gray-300 cursor-pointer hover:bg-gray-200">
-              <span className="text-xs text-black">Electronics</span>
-              <ChevronDown className="w-3 h-3 ml-1 text-gray-500" />
-            </div>
-            <input type="text" placeholder="Search Shops..." className="flex-1 px-3 text-black outline-none" />
-            <button className="bg-amazon-secondary hover:bg-[#fa8900] px-4 flex items-center justify-center"><Search className="text-black w-5 h-5" /></button>
-          </div>
+          <SearchForm />
 
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center hover:outline hover:outline-1 hover:outline-white rounded-sm p-1 cursor-pointer"><div className="font-bold text-sm">EN</div></div>
             <UserNav />
-            <Link href="/cart" className="flex items-end hover:outline hover:outline-1 hover:outline-white rounded-sm p-1 cursor-pointer relative"><ShoppingCart className="w-8 h-8" /><span className="font-bold text-amazon-secondary absolute top-0 left-1/2 -translate-x-1/2 text-sm">0</span><span className="font-bold text-sm hidden md:block">Cart</span></Link>
+            <CartBadge />
           </div>
         </div>
       </nav>
@@ -127,30 +66,42 @@ export default function ShopsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {shopCards.map((shop) => (
-            <div key={shop.name} className="bg-white border border-gray-200 rounded-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-              <div className={`h-48 overflow-hidden bg-gradient-to-br ${shop.gradient}`}>
-                <img src={shop.image} className="w-full h-full object-cover" alt="Shop" />
+          {shopOwners.map((owner: any) => {
+            const shopName = owner.shopDetails?.shopName || owner.name || "Unknown Shop";
+            return (
+            <div key={owner._id} className="bg-white border border-gray-200 rounded-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+              <div className={`h-48 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center`}>
+                {owner.image ? (
+                  <img src={owner.image} className="w-full h-full object-cover" alt={shopName} />
+                ) : (
+                  <span className="text-4xl text-gray-400 font-bold">{shopName.charAt(0)}</span>
+                )}
               </div>
               <div className="p-4 flex-1 flex flex-col">
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <h3 className="font-bold text-lg text-amazon-blue hover:text-amazon-orange hover:underline cursor-pointer">{shop.name}</h3>
-                    <p className="text-sm text-gray-500">{shop.location}</p>
+                    <h3 className="font-bold text-lg text-amazon-blue hover:text-amazon-orange hover:underline cursor-pointer">{shopName}</h3>
+                    <p className="text-sm text-gray-500">{owner.shopDetails?.address || "Bangladesh"}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 mb-2"><Rating value={shop.stars} /><span className="text-xs text-amazon-blue">{shop.ratings}</span></div>
+                <div className="flex items-center gap-1 mb-2"><Rating value={5} /><span className="text-xs text-amazon-blue">No ratings yet</span></div>
 
-                <p className="text-sm line-clamp-3 mb-4 text-gray-700">{shop.desc}</p>
+                <p className="text-sm line-clamp-3 mb-4 text-gray-700">{owner.shopDetails?.description || "Providing the best tech gadgets in town."}</p>
 
                 <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
-                  <div className="text-xs"><span className="text-gray-500">Specializes in:</span> <span className="font-bold">{shop.spec}</span></div>
-                  <Link href="/products" className="bg-amazon-yellow hover:bg-amazon-yellow_hover px-4 py-1.5 rounded-full text-xs font-bold shadow-sm transition-colors">Visit Shop</Link>
+                  <div className="text-xs"><span className="text-gray-500">Shop ID:</span> <span className="font-bold">{owner._id.substring(0, 8)}...</span></div>
+                  <Link href={`/shops/${owner._id}`} className="bg-amazon-yellow hover:bg-amazon-yellow_hover px-4 py-1.5 rounded-full text-xs font-bold shadow-sm transition-colors">Visit Shop</Link>
                 </div>
               </div>
             </div>
-          ))}
+            )
+          })}
+          {shopOwners.length === 0 && (
+            <div className="col-span-full text-center py-10 text-gray-500">
+              No registered shops found.
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-center gap-2 mt-8">

@@ -301,6 +301,7 @@ export default function PaymentProcessPage() {
                       <input
                         type="text"
                         placeholder="#### #### #### ####"
+                        required
                         className="w-full px-2 py-1 border border-gray-400 rounded-sm text-sm outline-none focus:ring-1 focus:ring-amazon-blue"
                       />
                     </div>
@@ -334,8 +335,6 @@ export default function PaymentProcessPage() {
                     </div>
                   </div>
                 </div>
-
-                <div className="h-px bg-gray-200"></div>
               </div>
             </form>
           </div>

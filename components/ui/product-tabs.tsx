@@ -50,7 +50,6 @@ export function ProductTabs({ product }: ProductTabsProps) {
   // Assuming logged-in users have purchased it for now
   const hasPurchased = !!session?.user;
 
-  console.log("Client-side Product Reviews Data:", product.reviews);
 
   return (
     <div className="mt-12">

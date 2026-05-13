@@ -1,19 +1,17 @@
 import { UserNav } from "@/components/auth/UserNav";
-import Link from "next/link";
-import {
-  ChevronRight,
-  Package,
-  ShieldCheck,
-  Star,
-  Truck,
-} from "lucide-react";
-import dbConnect from "@/lib/mongodb";
-import { Product } from "@/lib/models/Product";
-import { notFound } from "next/navigation";
-import { SearchForm } from "@/components/ui/search-form";
-import { CartBadge } from "@/components/ui/cart-badge";
+import { AIRecommendations } from "@/components/ui/ai-recommendations";
 import { BuyBox } from "@/components/ui/buy-box";
+import { CartBadge } from "@/components/ui/cart-badge";
 import { ProductTabs } from "@/components/ui/product-tabs";
+import { SearchForm } from "@/components/ui/search-form";
+import { Product } from "@/lib/models/Product";
+import dbConnect from "@/lib/mongodb";
+import {
+    ChevronRight,
+    Star
+} from "lucide-react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -152,8 +150,10 @@ export default async function DetailsPage({ params }: { params: any }) {
 
         <ProductTabs product={product} />
 
+        <AIRecommendations productId={String(product._id)} />
+
         <div className="mt-12 border-t border-gray-200 pt-8">
-          <h2 className="text-xl font-bold mb-6">Related Products</h2>
+          <h2 className="text-xl font-bold mb-6">More in this category</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {relatedProducts.map((rp: any) => (
               <Link href={`/details/${rp._id}`} key={rp._id} className="border border-gray-200 rounded p-4 hover:shadow-md transition">

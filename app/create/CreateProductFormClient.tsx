@@ -1,18 +1,25 @@
 "use client";
 
+import { Loader2, WandSparkles } from "lucide-react";
 import Link from "next/link";
-import { Plus, Upload } from "lucide-react";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import type { ChangeEvent, FormEvent } from "react";
+import { useState } from "react";
 
 export default function CreateProductFormClient() {
   const router = useRouter();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationMessage, setGenerationMessage] = useState("");
+  const [isClassifying, setIsClassifying] = useState(false);
+  const [classificationMessage, setClassificationMessage] = useState("");
+  const [generationTone, setGenerationTone] = useState<"professional" | "friendly" | "premium">("professional");
   const [formData, setFormData] = useState({
     name: "",
     category: "Laptops",
     brand: "Apple",
     condition: "New",
     description: "",
+    marketPriceHint: "",
     price: "",
     stock: "",
     sku: "",
@@ -32,11 +39,18 @@ export default function CreateProductFormClient() {
     sensors: "",
     compatibility: "",
     otherSpecs: "",
+    aiTags: [] as string[],
     features: ["", "", "", ""],
     image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500" // default image for demo
   });
 
-  const handleChange = (e: any) => {
+  type ProductDraft = Partial<typeof formData> & {
+    features?: string[];
+    price?: number | string;
+    stock?: number | string;
+  };
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -46,7 +60,170 @@ export default function CreateProductFormClient() {
     setFormData({ ...formData, features: newFeatures });
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleClassifyWithAI = async () => {
+    if (!formData.name && !formData.description) {
+      alert("Please enter product name or description first.");
+      return;
+    }
+
+    setIsClassifying(true);
+    setClassificationMessage("");
+
+    const keySpecs = [
+      formData.processor,
+      formData.ram,
+      formData.storage,
+      formData.displaySize,
+      formData.connectivity,
+      formData.batteryLife,
+      formData.noiseCancellation,
+      formData.megapixels,
+      formData.sensorSize,
+      formData.videoResolution,
+      formData.waterResistance,
+      formData.sensors,
+      formData.compatibility,
+      formData.otherSpecs,
+    ].filter((item) => item && item.trim().length > 0);
+
+    try {
+      const res = await fetch("/api/ai/classify-product", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          brand: formData.brand,
+          category: formData.category,
+          description: formData.description,
+          keySpecs,
+        }),
+      });
+
+      if (!res.ok) {
+        setClassificationMessage("Classification failed. Please try again.");
+        return;
+      }
+
+      const classified = await res.json();
+
+      setFormData((prev) => ({
+        ...prev,
+        category: classified.category || prev.category,
+        aiTags: Array.isArray(classified.tags) ? classified.tags.slice(0, 6) : prev.aiTags,
+      }));
+
+      setClassificationMessage(
+        classified.source === "llm"
+          ? `Category suggested: ${classified.category} (AI)`
+          : `Category suggested: ${classified.category} (fallback)`
+      );
+    } catch {
+      setClassificationMessage("Classification failed. Please try again.");
+    } finally {
+      setIsClassifying(false);
+    }
+  };
+
+  const handleGenerateWithAI = async () => {
+    if (!formData.name || !formData.category) {
+      alert("Please enter product name and category first.");
+      return;
+    }
+
+    setIsGenerating(true);
+    setGenerationMessage("");
+
+    const keySpecs = [
+      formData.processor,
+      formData.ram,
+      formData.storage,
+      formData.displaySize,
+      formData.connectivity,
+      formData.batteryLife,
+      formData.noiseCancellation,
+      formData.megapixels,
+      formData.sensorSize,
+      formData.videoResolution,
+      formData.waterResistance,
+      formData.sensors,
+      formData.compatibility,
+      formData.otherSpecs,
+    ].filter((item) => item && item.trim().length > 0);
+
+    try {
+      const res = await fetch("/api/ai/generate-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          category: formData.category,
+          brand: formData.brand,
+          keySpecs,
+          price: formData.price ? Number(formData.price) : undefined,
+          priceHint: formData.marketPriceHint ? Number(formData.marketPriceHint) : undefined,
+          tone: generationTone,
+        }),
+      });
+
+      if (!res.ok) {
+        setGenerationMessage("AI generation failed. Please try again.");
+        return;
+      }
+
+      const generated = await res.json();
+      const draft: ProductDraft = generated.draft || {};
+      const featureSource = Array.isArray(draft.features)
+        ? draft.features
+        : Array.isArray(generated.features)
+          ? generated.features
+          : [];
+
+      const featureList = featureSource.slice(0, 4);
+
+      setFormData((prev) => ({
+        ...prev,
+        description: draft.description || generated.description || prev.description,
+        price: draft.price !== undefined ? String(draft.price) : prev.price,
+        stock: draft.stock !== undefined ? String(draft.stock) : prev.stock,
+        image: draft.image || prev.image,
+        condition: draft.condition || prev.condition,
+        warranty: draft.warranty || prev.warranty,
+        processor: draft.processor || prev.processor,
+        ram: draft.ram || prev.ram,
+        storage: draft.storage || prev.storage,
+        displaySize: draft.displaySize || prev.displaySize,
+        connectivity: draft.connectivity || prev.connectivity,
+        batteryLife: draft.batteryLife || prev.batteryLife,
+        noiseCancellation: draft.noiseCancellation || prev.noiseCancellation,
+        megapixels: draft.megapixels || prev.megapixels,
+        sensorSize: draft.sensorSize || prev.sensorSize,
+        videoResolution: draft.videoResolution || prev.videoResolution,
+        waterResistance: draft.waterResistance || prev.waterResistance,
+        sensors: draft.sensors || prev.sensors,
+        compatibility: draft.compatibility || prev.compatibility,
+        otherSpecs: draft.otherSpecs || prev.otherSpecs,
+        sku: draft.sku || prev.sku,
+        features: [
+          featureList[0] || prev.features[0] || "",
+          featureList[1] || prev.features[1] || "",
+          featureList[2] || prev.features[2] || "",
+          featureList[3] || prev.features[3] || "",
+        ],
+      }));
+
+      setGenerationMessage(
+        generated.source === "llm"
+          ? "AI filled product draft successfully."
+          : "Smart fallback draft filled successfully."
+      );
+    } catch {
+      setGenerationMessage("AI generation failed. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!formData.name || !formData.price || !formData.stock) {
       alert("Name, Price, and Stock are required!");
@@ -62,6 +239,7 @@ export default function CreateProductFormClient() {
       description: formData.description,
       image: formData.image,
       features: formData.features.filter(f => f.trim() !== ""),
+      tags: formData.aiTags,
       about: {
         brand: formData.brand,
         condition: formData.condition,
@@ -118,6 +296,27 @@ export default function CreateProductFormClient() {
                 <option>Laptops</option><option>Smartphones</option><option>Audio</option>
                 <option>Gaming Accessories</option><option>Cameras</option><option>Wearables</option>
               </select>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleClassifyWithAI}
+                  disabled={isClassifying}
+                  className="inline-flex items-center justify-center gap-2 rounded-md border border-amazon-secondary bg-[#f3f8ff] px-3 py-1.5 text-xs font-bold text-amazon-blue transition-colors hover:bg-[#e7f2ff] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isClassifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <WandSparkles className="h-4 w-4" />}
+                  AI Classify & Tag
+                </button>
+                {classificationMessage ? <p className="text-xs text-gray-600">{classificationMessage}</p> : null}
+              </div>
+              {formData.aiTags.length > 0 ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {formData.aiTags.map((tag) => (
+                    <span key={tag} className="rounded-full bg-gray-100 px-2 py-1 text-[11px] font-semibold text-gray-700">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -125,6 +324,20 @@ export default function CreateProductFormClient() {
               <label className="mb-1 block text-sm font-bold">Brand</label>
               <input type="text" name="brand" value={formData.brand} onChange={handleChange} className="w-full rounded-md border border-gray-400 px-3 py-2 outline-none focus:border-amazon-blue focus:ring-1 focus:ring-amazon-blue" />
             </div>
+            <div>
+              <label className="mb-1 block text-sm font-bold">Market Price Hint (৳)</label>
+              <input
+                type="number"
+                name="marketPriceHint"
+                value={formData.marketPriceHint}
+                onChange={handleChange}
+                placeholder="e.g., 495000"
+                className="w-full rounded-md border border-gray-400 px-3 py-2 outline-none focus:border-amazon-blue focus:ring-1 focus:ring-amazon-blue"
+              />
+              <p className="mt-1 text-xs text-gray-500">Optional: give real market price to guide AI draft pricing.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm font-bold">Condition</label>
               <select name="condition" value={formData.condition} onChange={handleChange} className="w-full rounded-md border border-gray-400 px-3 py-2 outline-none focus:border-amazon-blue focus:ring-1 focus:ring-amazon-blue">
@@ -135,6 +348,30 @@ export default function CreateProductFormClient() {
           <div>
             <label className="mb-1 block text-sm font-bold">Description</label>
             <textarea name="description" value={formData.description} onChange={handleChange} rows={4} className="w-full rounded-md border border-gray-400 px-3 py-2 outline-none focus:border-amazon-blue focus:ring-1 focus:ring-amazon-blue" />
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-gray-700">Tone</label>
+                <select
+                  value={generationTone}
+                  onChange={(e) => setGenerationTone(e.target.value as "professional" | "friendly" | "premium")}
+                  className="rounded-md border border-gray-400 px-2 py-1 text-xs outline-none focus:border-amazon-blue focus:ring-1 focus:ring-amazon-blue"
+                >
+                  <option value="professional">Professional</option>
+                  <option value="friendly">Friendly</option>
+                  <option value="premium">Premium</option>
+                </select>
+              </div>
+              <button
+                type="button"
+                onClick={handleGenerateWithAI}
+                disabled={isGenerating}
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-amazon-secondary bg-[#f3f8ff] px-3 py-2 text-xs font-bold text-amazon-blue transition-colors hover:bg-[#e7f2ff] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <WandSparkles className="h-4 w-4" />}
+                Generate with AI
+              </button>
+              {generationMessage ? <p className="text-xs text-gray-600">{generationMessage}</p> : null}
+            </div>
           </div>
         </div>
       </div>
@@ -153,7 +390,7 @@ export default function CreateProductFormClient() {
                 </div>
               ))}
             </div>
-            <p className="mt-2 text-xs text-gray-500">These will be displayed in the "About this item" section on the product details page. Leave blank to omit.</p>
+            <p className="mt-2 text-xs text-gray-500">These will be displayed in the &quot;About this item&quot; section on the product details page. Leave blank to omit.</p>
           </div>
 
           {(formData.category === "Laptops" || formData.category === "Smartphones") && (
